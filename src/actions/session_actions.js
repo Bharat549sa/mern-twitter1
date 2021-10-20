@@ -1,32 +1,53 @@
-0import * as APIutil from "../util/session_api_util";
+import * as APIUtil from '../util/session_api_util';
+import jwt_decode from 'jwt-decode';
 
+export const RECEIVE_CURRENT_USER = "RECEIVE_CURRENT_USER";
+export const RECEIVE_SESSION_ERRORS = "RECEIVE_SESSION_ERRORS";
+export const RECEIVE_USER_LOGOUT = "RECEIVE_USER_LOGOUT";
+export const RECEIVE_USER_SIGN_IN = "RECEIVE_USER_SIGN_IN";
 
-export const RECEIVe_Current_user = "receive_current_user";
-export const receive_session_erros = "RECEIVE_Session_Errors";
-export const receive_user_logout ="receive_user_logout";
-export const receie_user_signin = "receive_user_sign_in";
+export const receiveCurrentUser = currentUser => ({
+    type: RECEIVE_CURRENT_USER,
+    currentUser
+});
 
-export const receiveCusrrentUser = currentUser => ({type: RECEIVE:CURRRENT_USER,
-currentUser});
+export const receiveUserSignIn = () => ({
+    type: RECEIVE_USER_SIGN_IN
+});
+  
+export const receiveErrors = errors => ({
+    type: RECEIVE_SESSION_ERRORS,
+    errors
+});
 
+export const logoutUser = () => ({
+    type: RECEIVE_USER_LOGOUT
+});
 
-export const receiveUserSignIN =() => ({
-    type: RECEIVE_USER_Sign_in
+export const signup = user => dispatch => (
+    APIUtil.signup(user).then(() => (
+        dispatch(receiveUserSignIn())
+    ), err => (
+        dispatch(receiveErrors(err.response.data))
+    ))
+);
 
-})
+export const login = user => dispatch => (
+    APIUtil.login(user).then(res => {
+        const { token } = res.data;
+        localStorage.setItem('jwtToken', token);
+        APIUtil.setAuthToken(token);
+        const decoded = jwt_decode(token);
+        dispatch(receiveCurrentUser(decoded))
+    })
+    .catch(err => {
+        dispatch(receiveErrors(err.response.data));
+    })
+)
 
-export const receiveErrors =() => ({
-    type: RECEIVE_USER_Sign_in
-
-})
-
-export const logoutUser =() => ({
-    type: RECEIVE_USER_Sign_in
-
-})
-
-export const signup =() => ({
-    type: RECEIVE_USER_Sign_in
-
-})
+export const logout = () => dispatch => {
+    localStorage.removeItem('jwtToken')
+    APIUtil.setAuthToken(false)
+    dispatch(logoutUser())
+};
 
